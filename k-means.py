@@ -189,7 +189,7 @@ for i in range(means):
     X = np.vstack((X, x))
 X = np.mat(X)
 (C,average) = kmeans(X, k)
-average = [[0,0],[0,0],[0,0]]
+#average = [[0,0],[0,0],[0,0]]
 covariance = Covariance(C,average)
 #(average,covariance)=M_step(X,np.mat(average),covariance,[1/k]*k)
 print(average)
