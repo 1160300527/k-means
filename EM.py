@@ -6,11 +6,11 @@ import sys
 k = 3  # k-means中所设置的k
 means = 3  # 生成数据类
 m = 2  # 数据属性个数
-num = 100  # 各类数据生成个数
+num = 50  # 各类数据生成个数
 loc = [[0,0],[5, 6], [10,3]]
 scale = [1, 2,2]
 sigmod = [[1,2],[1,2],[1,2]]
-exitloop = 0.0001
+exitloop = 0.01
 maxloop = 100
 
 
@@ -37,62 +37,28 @@ def initCenter(X,k):
         center.append(dot.tolist())
     return np.mat(center).T
 
-
-def kmeans(X, k):
-    finalC = []
-    mindistance = sys.maxsize
-    for t in range(10):
-        center = initCenter(X,k).tolist()
-        temp = []
-        while True:
-            C = []
-            for i in range(k):
-                C.append([])
-            for x in X:
-                min = sys.maxsize
-                belong = -1
-                for i in range(k):
-                    c = np.mat(center[i])
-                    dis = distance(x,c)
-                    if  (dis<min):
-                        min = dis
-                        belong = i
-                C[belong].append(x.tolist()[0])
-            for i in range(k):
-                center[i] = newCenter(C[i],m)
-            if(temp == C):
-                break
-            temp = C
-        allDistance_C = allDistance(C,center)
-        if(allDistance_C<mindistance):
-            mindistance = allDistance_C
-            finalC = C
-    C = [np.mat(c) for c in finalC]
-    return C,center
-
-
-def allDistance(C,Center):
-    sum = 0
-    for i in range(len(C)):
-        center = np.mat(Center[i])
-        for c in C[i]:
-            sum+=distance(c,center)
-    return sum
-
-
-
 def distance(x,c):
     return (x-c).dot((x-c).T)[0][0]
 
-def newCenter(C,m):
-    sum = np.mat([0]*m)
-    for c in C:
-        c1 = np.mat(c)
-        sum = sum + c1
-    sum = np.mat(sum)
-    #print(len(C))
-    return (sum/len(C)).tolist()[0]
 
+
+def initC(X, average,k):
+    mindistance = sys.maxsize
+    C = []
+    for i in range(k):
+        C.append([])
+    for x in X:
+        min = sys.maxsize
+        belong = -1
+        for i in range(k):
+            c = np.mat(average[i])
+            dis = distance(x,c)
+            if  (dis<min):
+                min = dis
+                belong = i
+        C[belong].append(x.tolist()[0])
+    C = [np.mat(c) for c in C]
+    return C
 
 #计算高斯分布概率
 #X:1*m  avergae:1*m sigmod:1*m
@@ -108,11 +74,10 @@ def normalPossibility(X,average,covariance):
 def Covariance(C,center):
     variance = []
     for i in range(len(C)):
-        c = C[i].tolist()
+        c = C[i]
         sum = [0]*len(center[i])
         for j in range(len(c)):
-            for k in range(len(center[i])):
-                sum[k] += np.power((c[j][k]-center[i][k]),2)
+            sum = (c[j]-center[i]).dot((c[j]-center[i]).T)
         variance.append(np.multiply((np.mat(sum)/len(C[i])),(np.eye(np.mat(C[i]).shape[1]))))
     return variance
 
@@ -158,10 +123,28 @@ def M_step(X,average,covariance,pi):
         if(math.fabs(oldLikelihood-newLikelihood)<exitloop):
             break
         oldLikelihood = newLikelihood
-    return average,covariance
+    return average,covariance,pi
 
 
-def draw(X,C,center, k,m):
+def split(X,average,covariance,pi):
+    gamma = np.mat(E_step(average,covariance,X,pi))
+    C = []
+    for i in range(k):
+        C.append([])
+    for i in range(gamma.shape[0]):
+        max = -1
+        Max = 0
+        for j in range(gamma.shape[1]):
+            if(gamma[i,j]>Max):
+                max = j
+                Max = gamma[i,j]
+        C[max].append(X[i].tolist()[0])
+    C = [np.mat(c) for c in C]
+    return C
+
+
+
+def draw(X,C,average, k,m):
     plt.subplot(121)
     for i in range(means):
         x = X[i*num:(i+1)*num].T
@@ -173,8 +156,8 @@ def draw(X,C,center, k,m):
         x = C[i].T
         plt.scatter(x.tolist()[
             0], x.tolist()[1], label="Y = "+str(i))
-    center = np.mat(center).T.tolist()
-    plt.scatter(center[0],center[1],label="center",marker="x")
+    average = np.mat(average).T.tolist()
+    plt.scatter(average[0],average[1],label="center",marker="x")
     plt.legend()
     plt.show()
 
@@ -188,10 +171,11 @@ for i in range(means):
         continue
     X = np.vstack((X, x))
 X = np.mat(X)
-(C,average) = kmeans(X, k)
-average = [[0,0],[0,0],[0,0]]
+average = initCenter(X,k).tolist()
+C = initC(X,average,k)
 covariance = Covariance(C,average)
-#(average,covariance)=M_step(X,np.mat(average),covariance,[1/k]*k)
+(average,covariance,pi)=M_step(X,np.mat(average),covariance,[1/k]*k)
+#EM算法聚类结果
 print(average)
-#k-means聚类结果
+C = split(X,average,covariance,pi)
 draw(X,C,average,k,m)
