@@ -70,14 +70,10 @@ def normalPossibility(X,average,covariance):
 
 
 #计算协方差
-def Covariance(C,center):
+def Covariance(C):
     variance = []
     for i in range(len(C)):
-        c = C[i]
-        sum = [0]*len(center[i])
-        for j in range(len(c)):
-            sum = (c[j]-center[i]).dot((c[j]-center[i]).T)
-        variance.append(np.multiply((np.mat(sum)/len(C[i])),(np.eye(np.mat(C[i]).shape[1]))))
+        variance.append(C[i].T.dot(C[i]))
     return variance
 
 
@@ -176,7 +172,7 @@ for i in range(means):
 X = np.mat(X)
 average = initCenter(X,k).tolist()
 C = initC(X,average,k)
-covariance = Covariance(C,average)
+covariance = Covariance(C)
 (average,covariance,pi)=M_step(X,np.mat(average),covariance,[1/k]*k)
 #EM算法聚类结果
 print(average)
