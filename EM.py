@@ -7,11 +7,10 @@ k = 3  # k-means中所设置的k
 means = 3  # 生成数据类
 m = 2  # 数据属性个数
 num = 50  # 各类数据生成个数
-loc = [[0,0],[5, 6], [10,3]]
-scale = [1, 2,2]
-sigmod = [[1,2],[1,2],[1,2]]
+loc = [[0,0],[0, 2], [10,0]]
+scale = [1,1,2]
 exitloop = 0.01
-maxloop = 100
+maxloop = 50
 
 
 # 生成X数据集
@@ -62,7 +61,7 @@ def initC(X, average,k):
 
 #计算高斯分布概率
 #X:1*m  avergae:1*m sigmod:1*m
-#返回：1,m
+#返回：1*1
 def normalPossibility(X,average,covariance):
     X = np.mat(X)
     index = -((X-average).dot(covariance.I).dot((X-average).T))/2
@@ -146,12 +145,16 @@ def split(X,average,covariance,pi):
 
 def draw(X,C,average, k,m):
     plt.subplot(121)
+    plt.title("Data")
     for i in range(means):
         x = X[i*num:(i+1)*num].T
         plt.scatter(x.tolist()[
             0], x.tolist()[1], label="Y = "+str(i))
+    L = np.mat(loc).T.tolist()
+    plt.scatter(L[0],L[1],label="center",marker="x")
     plt.legend()
     plt.subplot(122)
+    plt.title("The Result by EM")
     for i in range(k):
         x = C[i].T
         plt.scatter(x.tolist()[
